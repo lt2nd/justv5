@@ -1,10 +1,11 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-
+import AuthProvider from '../providers/AuthProvider';
+import { useAuth } from '../providers/AuthProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -20,6 +21,9 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+
+  
+
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
@@ -39,11 +43,20 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
+
+  return <RootLayoutNav />;
+}
+
+function RootLayoutNav() {
+
+
   return (
+    <AuthProvider>
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
       </Stack>
+    </AuthProvider>
   );
 }

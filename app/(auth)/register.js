@@ -29,6 +29,7 @@ const register = () => {
     
         if (error) Alert.alert(error.message);
         setLoading(false);
+        router.replace('/home')
       }
 
     return (
