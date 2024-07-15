@@ -1,10 +1,56 @@
 import { View, Text, StyleSheet, Button, Pressable, TextInput, Image, ScrollView } from 'react-native'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { AntDesign, Ionicons, Entypo, Feather } from '@expo/vector-icons';
 import Post from '../../../components/post';
-import { Link, useRouter, Href } from "expo-router";
+import { Link, useRouter, Href, router, Redirect } from "expo-router";
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../../providers/AuthProvider';
+import Avatar from '../../../components/Avatar';
+import Prfimage from '../../../components/getProfileImage'
 
 const profile = () => {
+
+  const { session } = useAuth();
+
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState('');
+  const [fullName, setFullname] = useState('');
+  const [website, setWebsite] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+
+  useEffect(() => {
+    if (session) getProfile();
+  }, [session]);
+
+  async function getProfile() {
+    try {
+      setLoading(true);
+      if (!session?.user) throw new Error('No user on the session!');
+
+      const { data, error, status } = await supabase
+        .from('profiles')
+        .select(`username, website, avatar_url, full_name`)
+        .eq('id', session?.user.id)
+        .single();
+      if (error && status !== 406) {
+        throw error;
+      }
+
+      if (data) {
+        setUsername(data.username);
+        setWebsite(data.website);
+        setAvatarUrl(data.avatar_url);
+        setFullname(data.full_name);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert(error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <ScrollView style={{ backgroundColor: "white" }}>
     <Image
@@ -18,14 +64,14 @@ const profile = () => {
 
         style={{ position: "absolute", top: 130, left: 10 }}
       >
-        <Image
-          style={{ width: 120, height: 120, borderRadius: 60 }}
-          source={{ uri: "https://img.freepik.com/free-photo/handsome-bearded-guy-posing-against-white-wall_273609-20597.jpg?size=626&ext=jpg&ga=GA1.1.1224184972.1711756800&semt=sph" }}
+        <Prfimage
+          size={130}
+          url={avatarUrl}
         />
 
       </Pressable>
       <Text style={{ fontSize: 17, fontWeight: "bold", marginLeft: 150, marginTop: 10 }}>
-        Neo the hacker
+        { username }
       </Text>
       <Text style={{ fontSize: 14, marginLeft: 150, marginTop: 10, color: "grey" }}>
         Location or not
@@ -53,6 +99,7 @@ const profile = () => {
           gap: 10,
           marginTop: 12,
           marginHorizontal: 10,
+          justifyContent: "center"
         }}
       >
         <Pressable
@@ -61,22 +108,15 @@ const profile = () => {
             paddingVertical: 4,
             paddingHorizontal: 10,
             borderRadius: 25,
+            height: 30,
           }}
+          onPress={() => router.push("/home/updateProfile")}
         >
-          <Text style={{ color: "white", textAlign: "center" }}>Open to</Text>
-        </Pressable>
-        <Pressable
-          style={{
-            backgroundColor: "#0072b1",
-            paddingVertical: 4,
-            paddingHorizontal: 10,
-            borderRadius: 25,
-          }}
-        >
-          <Text style={{ color: "white", textAlign: "center" }}>
-            Add Section
+          <Text style={{ color: "white", textAlign: "center", fontSize: 18 }}>
+            Update profile
           </Text>
         </Pressable>
+        
       </View>
 
       <View style={{ marginHorizontal: 10, marginTop: 10 }}>

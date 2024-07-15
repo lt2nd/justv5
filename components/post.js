@@ -1,13 +1,23 @@
-import { StyleSheet, View, Pressable, Image, Text } from "react-native";
+import { StyleSheet, View, Pressable, Image, Text, Alert } from "react-native";
 import { AntDesign, Ionicons, FontAwesome, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SimpleLineIcons } from "@expo/vector-icons";
+import Prfimage from "./getProfileImage";
+import { useAuth } from "../providers/AuthProvider";
+import { supabase } from "../app/lib/supabase";
 
-const Post = () => {
+const Post = ({ content, profiles }) => {
 
     const router = useRouter();
+    const { session } = useAuth();
     const [isFollowing, setIsFollowing] = useState(false);
+
+    const [avatarUrl, setAvatarUrl] = useState('');
+    const [username, setUsername] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [fullName, setFullname] = useState('');
+    const [website, setWebsite] = useState('');
 
     const MAX_LINES = 2;
     const [showfullText, setShowfullText] = useState(false);
@@ -17,22 +27,55 @@ const Post = () => {
 
     const [isLiked, setIsLiked] = useState(false);
 
+    useEffect(() => {
+        if (session) getProfile();
+    }, [session]);
+
+    async function getProfile() {
+        try {
+            setLoading(true);
+            if (!session?.user) throw new Error('No user on the session!');
+
+            const { data, error, status } = await supabase
+                .from('profiles')
+                .select(`username, website, avatar_url, full_name`)
+                .eq('id', session?.user.id)
+                .single();
+            if (error && status !== 406) {
+                throw error;
+            }
+
+            if (data) {
+                setUsername(data.username);
+                setWebsite(data.website);
+                setAvatarUrl(data.avatar_url);
+                setFullname(data.full_name);
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                Alert.alert(error.message);
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return (
         <View >
 
             {/* POST HEADER */}
 
             <View style={styles.containerpostheader} >
-                <Pressable onPress={() => router.push("/home/profile")}>
-                    <Image
-                        style={styles.imageavatar}
-                        source={{ uri: "https://img.freepik.com/free-photo/handsome-bearded-guy-posing-against-white-wall_273609-20597.jpg?size=626&ext=jpg&ga=GA1.1.1224184972.1711756800&semt=sph" }}
+                <Pressable onPress={() => router.push("/home/profile")} style={{marginRight: 10}}>
+                    <Prfimage
+                        size={60}
+                        url={avatarUrl}
                     />
                 </Pressable>
                 <View style={{ flexDirection: "column", gap: 2 }}>
                     <Pressable onPress={() => router.push("/home/profile")}>
                         <Text style={{ fontSize: 15, fontWeight: "600" }}>
-                            Neo
+                            {username}
                         </Text>
                         <Text
                             numberOfLines={1}
@@ -62,7 +105,7 @@ const Post = () => {
             <View style={{ marginHorizontal: 2 }}>
                 <View>
                     <Text style={styles.description}>
-                        Post  description
+                        {content}
                     </Text>
                 </View>
                 <Pressable onPress={toggleShowFullText}>

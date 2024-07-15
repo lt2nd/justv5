@@ -1,14 +1,53 @@
-import { StyleSheet, View, Pressable, Image, Text } from "react-native";
+import { StyleSheet, View, Pressable, Image, Text, Alert } from "react-native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
-
+import { supabase } from "../app/lib/supabase";
+import { useAuth } from "../providers/AuthProvider";
+import Prfimage from "./getProfileImage";
+import React, { useState, useEffect } from 'react';
+import { router } from "expo-router";
 
 const Header = () => {
+
+    const {session} = useAuth();
+    const [avatarUrl, setAvatarUrl] = useState('');
+    const [profile,setProfile] = useState(null);
+
+    useEffect(() => {
+        if (session) getProfile();
+      }, [session]);
+    
+      async function getProfile() {
+        try {
+          if (!session?.user) throw new Error('No user on the session!');
+    
+          const { data, error, status } = await supabase
+            .from('profiles')
+            .select(`username, website, avatar_url, full_name`)
+            .eq('id', session?.user.id)
+            .single();
+          if (error && status !== 406) {
+            throw error;
+          }
+    
+          if (data) {
+            //setUsername(data.username);
+            //setWebsite(data.website);
+            setAvatarUrl(data.avatar_url);
+            //setFullname(data.full_name);
+          }
+        } catch (error) {
+          if (error instanceof Error) {
+            Alert.alert(error.message);
+          }
+        } 
+      }
+
     return(
         <View style={styles.header}>
                 <Pressable onPress={() => router.push("/home/profile")}>
-                    <Image
-                        style={styles.profileimage}
-                        source={{ uri: "https://i0.wp.com/picjumbo.com/wp-content/uploads/beautiful-nature-mountain-scenery-with-flowers-free-photo.jpg?w=600&quality=80" }}
+                    <Prfimage
+                        size={40}
+                        url={avatarUrl}
                     />
                 </Pressable>
                 <Pressable
