@@ -17,6 +17,7 @@ const index = () => {
   useEffect(() => {
     fetchPosts();
   }, []);
+  
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -33,7 +34,10 @@ const index = () => {
     // console.log(JSON.stringify(data, null, 2));
     setPosts(data);
     setLoading(false);
+    
   };
+
+  
 
   if (!user) {
     <Redirect href={'/(auth)/login'} />
@@ -45,6 +49,15 @@ const index = () => {
       <FlatList
       data={posts}
       renderItem={({item}) => <Post post={item} />}
+      contentContainerStyle={{
+        gap: 10,
+        maxWidth: 512,
+        alignSelf: 'center',
+        width: '100%',
+      }}
+      showsVerticalScrollIndicator={false}
+      onRefresh={fetchPosts}
+      refreshing={loading}
       />
     </View>
   )

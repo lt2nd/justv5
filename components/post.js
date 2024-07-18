@@ -1,13 +1,14 @@
 import { StyleSheet, View, Pressable, Image, Text, Alert } from "react-native";
 import { AntDesign, Ionicons, FontAwesome, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component } from "react";
 import { SimpleLineIcons } from "@expo/vector-icons";
 import Prfimage from "./getProfileImage";
 import { useAuth } from "../providers/AuthProvider";
 import { supabase } from "../app/lib/supabase";
+import TimeAgo from 'react-native-timeago';
 
-const Post = ({ content, profiles }) => {
+const Post = ({ post }) => {
 
     const router = useRouter();
     const { session } = useAuth();
@@ -18,11 +19,41 @@ const Post = ({ content, profiles }) => {
     const [loading, setLoading] = useState(true);
     const [fullName, setFullname] = useState('');
     const [website, setWebsite] = useState('');
+    const [posts, setPosts] = useState([]);
+    const [content, setContent] = useState('');
+    const [created_at, setCreated_at] = useState('');
 
     const MAX_LINES = 2;
     const [showfullText, setShowfullText] = useState(false);
     const toggleShowFullText = () => {
         setShowfullText(!showfullText);
+    };
+
+    useEffect(() => {
+        fetchPosts();
+    }, []);
+
+
+    const fetchPosts = async () => {
+        setLoading(true);
+        let { data, error } = await supabase
+            .from('posts')
+            .select('*')
+        // .eq('id', 49) // show only my posts
+        //.eq('my_likes.user_id', user.id)
+        .order('created_at', { ascending: false });
+
+        if (error) {
+            Alert.alert('Something went wrong');
+        }
+        // console.log(JSON.stringify(data, null, 2));
+        setPosts(data);
+        if (data) {
+            setContent(data.content);
+            setCreated_at(data.created_at);
+        }
+        setLoading(false);
+
     };
 
     const [isLiked, setIsLiked] = useState(false);
@@ -66,16 +97,16 @@ const Post = ({ content, profiles }) => {
             {/* POST HEADER */}
 
             <View style={styles.containerpostheader} >
-                <Pressable onPress={() => router.push("/home/profile")} style={{marginRight: 10}}>
+                <Pressable onPress={() => router.push("/home/profile")} style={{ marginRight: 10 }}>
                     <Prfimage
                         size={60}
-                        url={avatarUrl}
+                        url={post?.user.avatar_url}
                     />
                 </Pressable>
                 <View style={{ flexDirection: "column", gap: 2 }}>
                     <Pressable onPress={() => router.push("/home/profile")}>
                         <Text style={{ fontSize: 15, fontWeight: "600" }}>
-                            {username}
+                            {post?.user.username}
                         </Text>
                         <Text
                             numberOfLines={1}
@@ -85,7 +116,7 @@ const Post = ({ content, profiles }) => {
                             Engineer Graduate | LinkedIn Member
                         </Text>
                         <Text style={{ color: "gray" }}>
-                            2h a go
+                            <TimeAgo time={post?.created_at} />
                         </Text>
                     </Pressable>
                 </View>
@@ -105,7 +136,7 @@ const Post = ({ content, profiles }) => {
             <View style={{ marginHorizontal: 2 }}>
                 <View>
                     <Text style={styles.description}>
-                        {content}
+                        {post?.content}
                     </Text>
                 </View>
                 <Pressable onPress={toggleShowFullText}>

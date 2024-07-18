@@ -18,6 +18,10 @@ const profile = () => {
   const [website, setWebsite] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
 
+  if (!session) {
+    router.push("/login/")
+  }
+
   useEffect(() => {
     if (session) getProfile();
   }, [session]);
@@ -205,7 +209,8 @@ const profile = () => {
           marginLeft: 140,
           marginRight: 140,
         }}
-        title="Sign Out" onPress={() => supabase.auth.signOut()}
+        title="Sign Out" onPress={() => supabase.auth.signOut() }
+        
 
       >
 
